@@ -1,0 +1,12 @@
+id: EXP-001
+title: "What does buy-and-hold cost at $5?"
+friction_version: "1.0.0"
+strategies:
+  - buy_and_hold: {symbol: SPY}
+  - buy_and_hold: {symbol: QQQ}
+  - buy_and_hold: {symbol: IWM}
+  - balanced_6040: {symbols: [SPY, TLT]}
+capital_tiers: [5, 50, 500, 5000, 50000]
+window: {start: "2016-06-01", end: "2022-05-31"}
+stress_multipliers: [1, 2, 5]
+seed: 42

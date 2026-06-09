@@ -1,0 +1,7 @@
+# Capital tiers for viability curves (RQ1/RQ2)
+tiers:
+  - 5
+  - 50
+  - 500
+  - 5000
+  - 50000

@@ -1,0 +1,10 @@
+# Date splits — enforced in code; locked test is never touched during tuning.
+in_sample:
+  start: "2016-06-01"
+  end: "2022-05-31"
+validation:
+  start: "2022-06-01"
+  end: "2024-05-31"
+locked_test:
+  start: "2024-06-01"
+  end: "2026-06-01"

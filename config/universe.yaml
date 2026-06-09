@@ -1,0 +1,11 @@
+# Phase 1 ETF universe — highly liquid US ETFs (best case for $5 accounts)
+symbols:
+  - SPY
+  - QQQ
+  - IWM
+  - TLT
+  - IEF
+  - GLD
+  - XLE
+  - XLF
+  - XLK

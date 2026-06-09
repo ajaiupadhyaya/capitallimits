@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.env
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+dist/
+build/
+
+# Market data cache (fetch locally)
+data/raw/
+data/processed/
+data/quality/
+
+# Experiment outputs (regenerated)
+experiments/*/results/
+experiments/*/tearsheet.html
+
+# Keep fixture data for CI
+!tests/fixtures/

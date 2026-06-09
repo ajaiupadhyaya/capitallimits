@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; color: #1a1a1a; }
+    h1 { font-size: 1.5rem; border-bottom: 2px solid #1a3a8f; padding-bottom: 0.5rem; }
+    h2 { font-size: 1.1rem; margin-top: 2rem; color: #1a3a8f; }
+    .meta { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+    img.chart { width: 100%; margin: 1rem 0; border: 1px solid #e0e0e0; border-radius: 4px; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.9rem; }
+    th, td { border: 1px solid #ddd; padding: 0.4rem 0.6rem; text-align: left; }
+    th { background: #f5f5f5; }
+  </style>
+</head>
+<body>
+  <h1>{{ title }}</h1>
+  <p class="meta">Friction model version: {{ friction_version }}</p>
+
+  <h2>Capital-Viability Frontier</h2>
+  <img class="chart" src="data:image/png;base64,{{ charts.viability }}" alt="Capital viability">
+
+  <h2>Cost Ledger ($5)</h2>
+  <img class="chart" src="data:image/png;base64,{{ charts.cost_ledger }}" alt="Cost ledger">
+
+  <h2>Gross vs Net Waterfall ($5)</h2>
+  {% for wf in charts.waterfalls %}
+  <img class="chart" src="data:image/png;base64,{{ wf }}" alt="Waterfall">
+  {% endfor %}
+
+  <h2>Equity Curves ($5)</h2>
+  {% for eq in charts.equity_curves %}
+  <img class="chart" src="data:image/png;base64,{{ eq }}" alt="Equity curve">
+  {% endfor %}
+
+  <h2>Strategies</h2>
+  <table>
+    <tr><th>Strategy</th><th>Parameters</th></tr>
+    {% for r in runs %}
+    <tr><td>{{ r.name }}</td><td>{{ r.params }}</td></tr>
+    {% endfor %}
+  </table>
+</body>
+</html>
