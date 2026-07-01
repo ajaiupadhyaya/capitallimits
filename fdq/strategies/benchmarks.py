@@ -71,9 +71,19 @@ class Balanced6040(Strategy):
 
 
 def build_strategy(name: str, params: dict[str, Any]) -> Strategy:
-    if name == "buy_and_hold":
-        return BuyAndHold(params)
-    if name == "balanced_6040":
-        return Balanced6040(params)
-    msg = f"Unknown strategy: {name}"
-    raise ValueError(msg)
+    from fdq.strategies.meanrev import Bollinger, RSIReversion, ZScoreReversion
+    from fdq.strategies.trend import Donchian, MACrossover
+
+    registry: dict[str, type[Strategy]] = {
+        "buy_and_hold": BuyAndHold,
+        "balanced_6040": Balanced6040,
+        "ma_crossover": MACrossover,
+        "donchian": Donchian,
+        "zscore_reversion": ZScoreReversion,
+        "rsi_reversion": RSIReversion,
+        "bollinger": Bollinger,
+    }
+    if name not in registry:
+        msg = f"Unknown strategy: {name}"
+        raise ValueError(msg)
+    return registry[name](params)
