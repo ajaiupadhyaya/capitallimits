@@ -49,6 +49,18 @@
 | $5000 | -2.45% | -0.08 | -37.76% | 0.289 | 0.914 | 36 |
 | $50000 | -2.45% | -0.08 | -37.76% | 0.289 | 0.914 | 36 |
 
+## Statistical power (pre-registered)
+
+Annualized minimum detectable Sharpe (one-sided, alpha=0.05, power=0.80) — the smallest true Sharpe a forward run of this length could distinguish from zero:
+
+| Horizon | Min. detectable Sharpe |
+|---------|------------------------|
+| 6 months | 3.52 |
+| 12 months | 2.49 |
+| 24 months | 1.76 |
+
+Reported OOS Sharpes below these thresholds are not statistically resolvable over the corresponding horizon, independent of friction.
+
 ## Limitations
 
 - Locked test set (2024-2026) not used here.

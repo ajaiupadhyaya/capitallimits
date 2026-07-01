@@ -23,6 +23,7 @@ from fdq.validation.bootstrap import bootstrap_ruin_analysis
 from fdq.validation.dsr import deflated_sharpe, probabilistic_sharpe
 from fdq.validation.metrics import cagr, max_drawdown, sharpe, sortino, total_return, turnover
 from fdq.validation.pbo import probability_backtest_overfitting
+from fdq.validation.power import mds_over_horizon
 from fdq.validation.walkforward import in_sample_return_matrix, walk_forward
 
 
@@ -366,5 +367,24 @@ def _write_walkforward_report(
                 f"| {s['dsr']:.3f} | {s['pbo']:.3f} | {s['n_trials']} |"
             )
         lines.append("")
-    lines += ["## Limitations", "", "- Locked test set (2024-2026) not used here.", ""]
+    lines += [
+        "## Statistical power (pre-registered)",
+        "",
+        "Annualized minimum detectable Sharpe (one-sided, alpha=0.05, power=0.80) — "
+        "the smallest true Sharpe a forward run of this length could distinguish from zero:",
+        "",
+        "| Horizon | Min. detectable Sharpe |",
+        "|---------|------------------------|",
+        f"| 6 months | {mds_over_horizon(6):.2f} |",
+        f"| 12 months | {mds_over_horizon(12):.2f} |",
+        f"| 24 months | {mds_over_horizon(24):.2f} |",
+        "",
+        "Reported OOS Sharpes below these thresholds are not statistically resolvable "
+        "over the corresponding horizon, independent of friction.",
+        "",
+        "## Limitations",
+        "",
+        "- Locked test set (2024-2026) not used here.",
+        "",
+    ]
     path.write_text("\n".join(lines))
