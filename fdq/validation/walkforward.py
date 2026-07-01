@@ -109,3 +109,31 @@ def walk_forward(
     oos_equity = tier * (1.0 + oos_returns).cumprod()
     arr = np.array(trial_sharpes, dtype=float)
     return WalkForwardResult(oos_returns, oos_equity, fold_params, arr, arr.size)
+
+
+def in_sample_return_matrix(
+    strategy_name: str,
+    base_params: dict[str, Any],
+    grid: dict[str, list[Any]],
+    bars: pd.DataFrame,
+    tier: float,
+    friction: FrictionConfig,
+    macro: pd.DataFrame | None,
+    is_start: date,
+    is_end: date,
+    seed: int = 42,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Run every grid combo over the full in-sample window; return aligned (T, N)
+    per-period returns matrix and the per-combo trial Sharpe vector. Feeds PBO + DSR."""
+    combos = grid_combos(grid)
+    cols: list[pd.Series] = []
+    sharpes: list[float] = []
+    for i, combo in enumerate(combos):
+        params = {**base_params, **combo}
+        strat = build_strategy(strategy_name, params)
+        cfg = BacktestConfig(starting_capital=tier, friction=friction, seed=seed)
+        res = run_backtest(strat, bars, cfg, macro, is_start, is_end)
+        cols.append(res.returns.rename(f"c{i}"))
+        sharpes.append(sharpe(res.returns))
+    matrix = pd.concat(cols, axis=1).fillna(0.0)
+    return matrix.to_numpy(dtype=float), np.array(sharpes, dtype=float)

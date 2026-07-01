@@ -49,3 +49,17 @@ def test_walk_forward_runs_on_real_fixture() -> None:
     assert res.n_trials == res.trial_sharpes.size
     assert res.n_trials >= 3  # >= 1 combo evaluated per fold
     assert isinstance(res.oos_equity, pd.Series)
+
+
+def test_in_sample_matrix_shape() -> None:
+    from fdq.validation.walkforward import in_sample_return_matrix
+
+    bars = _real_bars()
+    start = bars.index.min().date()
+    end = bars.index.max().date()
+    mat, sr = in_sample_return_matrix(
+        "ma_crossover", {"symbol": "SPY"}, {"fast": [10, 20], "slow": [50]},
+        bars, 5.0, FrictionConfig(), None, start, end,
+    )
+    assert mat.shape[1] == 2 and sr.shape[0] == 2
+    assert mat.shape[0] > 0
