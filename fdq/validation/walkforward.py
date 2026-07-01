@@ -93,7 +93,10 @@ def walk_forward(
             strat = build_strategy(strategy_name, params)
             cfg = BacktestConfig(starting_capital=tier, friction=friction, seed=seed)
             res = run_backtest(strat, bars, cfg, macro, fold.train_start, fold.train_end)
-            sr = sharpe(res.returns)
+            # Period (per-bar) Sharpe: deflated_sharpe compares against a benchmark
+            # built from these trial Sharpes and its own per-bar Sharpe, so units must
+            # match. Ranking is unchanged vs annualized (monotonic within a fold).
+            sr = sharpe(res.returns, annualize=False)
             trial_sharpes.append(sr)
             if sr > best_sr:
                 best_sr = sr
@@ -134,6 +137,6 @@ def in_sample_return_matrix(
         cfg = BacktestConfig(starting_capital=tier, friction=friction, seed=seed)
         res = run_backtest(strat, bars, cfg, macro, is_start, is_end)
         cols.append(res.returns.rename(f"c{i}"))
-        sharpes.append(sharpe(res.returns))
+        sharpes.append(sharpe(res.returns, annualize=False))  # period units for DSR
     matrix = pd.concat(cols, axis=1).fillna(0.0)
     return matrix.to_numpy(dtype=float), np.array(sharpes, dtype=float)

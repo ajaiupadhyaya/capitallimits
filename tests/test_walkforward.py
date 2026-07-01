@@ -49,6 +49,8 @@ def test_walk_forward_runs_on_real_fixture() -> None:
     assert res.n_trials == res.trial_sharpes.size
     assert res.n_trials >= 3  # >= 1 combo evaluated per fold
     assert isinstance(res.oos_equity, pd.Series)
+    # Trial Sharpes must be per-bar (period) units for DSR, not annualized (~15x larger).
+    assert abs(res.trial_sharpes).max() < 0.5
 
 
 def test_in_sample_matrix_shape() -> None:

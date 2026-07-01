@@ -1,0 +1,14 @@
+id: EXP-002
+title: "How much trend-following alpha survives friction at $5?"
+friction_version: "1.0.0"
+mode: walkforward
+n_folds: 4
+strategies:
+  - ma_crossover: {symbol: SPY, grid: {fast: [10, 20, 50], slow: [50, 100, 200]}}
+  - donchian: {symbol: SPY, grid: {window: [20, 50]}}
+  - ma_crossover: {symbol: QQQ, grid: {fast: [10, 20, 50], slow: [50, 100, 200]}}
+  - donchian: {symbol: QQQ, grid: {window: [20, 50]}}
+capital_tiers: [5, 50, 500, 5000, 50000]
+window: {start: "2016-06-01", end: "2022-05-31"}
+stress_multipliers: [1]
+seed: 42
