@@ -1,0 +1,14 @@
+id: EXP-003
+title: "Does mean-reversion survive friction at $5?"
+friction_version: "1.0.0"
+mode: walkforward
+n_folds: 4
+strategies:
+  - zscore_reversion: {symbol: SPY, grid: {window: [5, 10, 20], entry_z: [1.0, 1.5, 2.0]}}
+  - rsi_reversion: {symbol: SPY, grid: {period: [14], low: [20, 25, 30], high: [70]}}
+  - bollinger: {symbol: SPY, grid: {window: [20], n_std: [1.0, 2.0, 3.0]}}
+  - zscore_reversion: {symbol: IWM, grid: {window: [5, 10, 20], entry_z: [1.0, 1.5, 2.0]}}
+capital_tiers: [5, 50, 500, 5000, 50000]
+window: {start: "2016-06-01", end: "2022-05-31"}
+stress_multipliers: [1]
+seed: 42
