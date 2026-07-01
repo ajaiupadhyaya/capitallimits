@@ -22,6 +22,8 @@ from fdq.util.settings import Settings
 from fdq.validation.bootstrap import bootstrap_ruin_analysis
 from fdq.validation.dsr import deflated_sharpe, probabilistic_sharpe
 from fdq.validation.metrics import cagr, max_drawdown, sharpe, sortino, total_return, turnover
+from fdq.validation.pbo import probability_backtest_overfitting
+from fdq.validation.walkforward import in_sample_return_matrix, walk_forward
 
 
 @dataclass
@@ -81,6 +83,11 @@ def run_experiment(
 
         ensure_macro_cached(start, end, settings=settings)
         macro = load_validated_macro(data_dir)
+
+    if cfg.get("mode") == "walkforward":
+        return _run_walkforward_experiment(
+            cfg, exp_dir, results_dir, bars, macro, start, end, tiers, seed, report
+        )
 
     all_runs: list[StrategyRunResult] = []
     summary: dict[str, Any] = {
@@ -156,11 +163,12 @@ def _collect_symbols(strategies: list[dict[str, Any]]) -> set[str]:
     symbols: set[str] = set()
     for entry in strategies:
         name, params = _parse_strategy_entry(entry)
-        if name == "buy_and_hold":
+        if "symbol" in params:
             symbols.add(str(params["symbol"]))
-        elif name == "balanced_6040":
-            syms = params.get("symbols", ["SPY", "TLT"])
-            symbols.update(str(s) for s in syms)
+        if "symbols" in params:
+            symbols.update(str(s) for s in params["symbols"])
+        if name == "balanced_6040" and "symbols" not in params:
+            symbols.update(["SPY", "TLT"])
     return symbols
 
 
@@ -265,4 +273,98 @@ def _write_report(cfg: dict[str, Any], runs: list[StrategyRunResult], path: Path
         ]
     )
 
+    path.write_text("\n".join(lines))
+
+
+def _run_walkforward_experiment(
+    cfg: dict[str, Any],
+    exp_dir: Path,
+    results_dir: Path,
+    bars: Any,
+    macro: Any,
+    start: date,
+    end: date,
+    tiers: list[float],
+    seed: int,
+    report: bool,
+) -> Path:
+    n_folds = int(cfg.get("n_folds", 4))
+    friction = load_friction_config(stress_multiplier=1.0)
+    summary: dict[str, Any] = {
+        "id": cfg["id"],
+        "title": cfg["title"],
+        "friction_model_version": cfg.get("friction_version", "1.0.0"),
+        "window": cfg["window"],
+        "mode": "walkforward",
+        "strategies": [],
+    }
+    report_runs: list[dict[str, Any]] = []
+    for entry in cfg["strategies"]:
+        name, params = _parse_strategy_entry(entry)
+        grid = dict(params.pop("grid", {}))
+        matrix, trial_sharpes = in_sample_return_matrix(
+            name, params, grid, bars, tiers[0], friction, macro, start, end, seed
+        )
+        pbo = probability_backtest_overfitting(matrix) if matrix.shape[1] >= 2 else 0.0
+        tier_stats: dict[str, Any] = {}
+        for tier in tiers:
+            wf = walk_forward(
+                name, params, grid, bars, tier, friction, macro, n_folds=n_folds, seed=seed
+            )
+            eq = wf.oos_equity
+            ret = wf.oos_returns
+            tier_stats[str(int(tier))] = {
+                "starting_equity": tier,
+                "ending_equity": float(eq.iloc[-1]) if len(eq) else tier,
+                "cagr": cagr(eq),
+                "sharpe": sharpe(ret),
+                "sortino": sortino(ret),
+                "max_drawdown": max_drawdown(eq),
+                "dsr": deflated_sharpe(ret, trial_sharpes),
+                "pbo": pbo,
+                "n_trials": int(wf.n_trials),
+                "fold_params": wf.fold_params,
+            }
+            eq.to_frame("equity").to_parquet(
+                results_dir / f"{name}_{params.get('symbol', 'combo')}_tier{int(tier)}_equity.parquet"
+            )
+        label = f"{name}_{params.get('symbol', 'combo')}"
+        summary["strategies"].append({"name": label, "params": params, "tiers": tier_stats})
+        report_runs.append({"label": f"{name} ({params})", "tiers": tier_stats})
+
+    with open(results_dir / "summary.json", "w") as f:
+        json.dump(summary, f, indent=2, default=str)
+    if report:
+        _write_walkforward_report(cfg, report_runs, exp_dir / "report.md")
+    return results_dir
+
+
+def _write_walkforward_report(
+    cfg: dict[str, Any], runs: list[dict[str, Any]], path: Path
+) -> None:
+    lines = [
+        f"# {cfg['id']} — {cfg['title']}",
+        "",
+        "## Methodology",
+        "",
+        f"- Mode: walk-forward ({cfg.get('n_folds', 4)} expanding folds), grid-search on train only",
+        f"- Window (in-sample): {cfg['window']['start']} → {cfg['window']['end']}",
+        f"- Friction model version: {cfg.get('friction_version', '1.0.0')}",
+        "- Every reported result is net-of-friction; DSR deflates by trial count; PBO via CSCV.",
+        "",
+        "## Results",
+        "",
+    ]
+    for run in runs:
+        lines.append(f"### {run['label']}")
+        lines.append("")
+        lines.append("| Tier | CAGR | Sharpe | Max DD | DSR | PBO | Trials |")
+        lines.append("|------|------|--------|--------|-----|-----|--------|")
+        for tier, s in sorted(run["tiers"].items(), key=lambda kv: int(kv[0])):
+            lines.append(
+                f"| ${tier} | {s['cagr']:.2%} | {s['sharpe']:.2f} | {s['max_drawdown']:.2%} "
+                f"| {s['dsr']:.3f} | {s['pbo']:.3f} | {s['n_trials']} |"
+            )
+        lines.append("")
+    lines += ["## Limitations", "", "- Locked test set (2024-2026) not used here.", ""]
     path.write_text("\n".join(lines))

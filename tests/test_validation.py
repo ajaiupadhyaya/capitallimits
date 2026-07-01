@@ -37,9 +37,11 @@ def test_bootstrap_ruin() -> None:
     assert result.max_drawdown_p95 <= 0.0
 
 
-def test_pbo_stub_raises() -> None:
-    with pytest.raises(NotImplementedError):
-        probability_backtest_overfitting([])
+def test_pbo_returns_probability() -> None:
+    rng = np.random.default_rng(3)
+    matrix = rng.normal(0, 0.01, size=(300, 6))
+    pbo = probability_backtest_overfitting(matrix, n_splits=10)
+    assert 0.0 <= pbo <= 1.0
 
 
 def test_max_drawdown() -> None:
